@@ -23,9 +23,24 @@ bool Texture::loaded() {
 
 bool Texture::load() {
   if (loaded()) free();
-  m_data = IMG_Load(m_path.c_str());
+
+  SDL_Surface *img = IMG_Load(m_path.c_str());
+  SDL_PixelFormat pf;
+  pf.palette = 0;
+  pf.BitsPerPixel = 32;
+  pf.BytesPerPixel = 4;
+  pf.Rshift = pf.Rloss = pf.Gloss = pf.Bloss = pf.Aloss = 0;
+  pf.Rmask = 0x000000ff;
+  pf.Gshift = 8;
+  pf.Gmask = 0x0000ff00;
+  pf.Bshift = 16;
+  pf.Bmask = 0x00ff0000;
+  pf.Ashift = 24;
+  pf.Amask = 0xff000000;
+
+  m_data = SDL_ConvertSurface(img, &pf, SDL_SWSURFACE);
   if (!m_data) {
-    SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Error whilst loading texture '%s': %s", m_path.c_str(), IMG_GetError());
+    SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Error while loading texture '%s': %s", m_path.c_str(), IMG_GetError());
     return false;
   } else {
     SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Loaded texture '%s': %ix%i", m_path.c_str(), m_data->w, m_data->h);

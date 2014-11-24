@@ -1,10 +1,20 @@
 #ifndef __SPRITE_H__
 #define __SPRITE_H__
 
+#include <string>
+
+class SpriteDescriptor : public AssetDescriptor {
+public:
+  SpriteDescriptor() {}
+  ~SpriteDescriptor() {}
+  virtual void *load(const AssetSystem &sys, const pugi::xml_node &node) override;
+};
+
+
 class Sprite {
 public:
-  Sprite(string m_id, int m_clipH, int m_clipW, int m_clipY, int m_clipX)
-      : m_id(m_id), m_clipH(m_clipH), m_clipW(m_clipW), m_clipY(m_clipY), m_clipX(m_clipX) {
+  Sprite(std::string id, int clipX, int clipY, int clipW, int clipH)
+      : m_id(id), m_clipH(clipH), m_clipW(clipW), m_clipY(clipY), m_clipX(clipX) {
   }
   ~Sprite() {}
 
@@ -12,7 +22,7 @@ public:
     return m_id;
   }
 
-private:
+//private:
   int m_clipX, m_clipY, m_clipW, m_clipH;
   std::string m_id;
 };
