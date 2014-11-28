@@ -7,6 +7,7 @@
 #include <unordered_set>
 #include <vector>
 
+#include "packer.h"
 #include "texture.h"
 #include "sprite.h"
 #include "globals.h"
@@ -18,13 +19,9 @@ struct TexturePatch {
   Uint32 m_x, m_y, m_w, m_h;
 };
 
-class Packer {
-public:
-  Packer(Uint32 width, Uint32 height);
-  ~Packer();
-  TexturePatch pack(std::string id, Uint32 width, Uint32 height);
-private:
-  Uint32 m_width, m_height;
+enum StitcherTactic {
+  ExpandSize,
+  Prune
 };
 
 class Stitcher {
@@ -35,6 +32,8 @@ public:
   void begin();
   void draw(const Sprite &sprite, float x, float y);
   void end();
+
+  void setTactic(StitcherTactic tactic) { m_tactic = tactic; }
 private:
   void stitch(const Sprite &sprite);
   void upload(const TexturePatch &patch, void *data);
@@ -42,7 +41,6 @@ private:
   void prune();
 
   void sort();
-
 
   /* vertex buffer handle, index buffer handle. */
   GLuint m_vbo, m_ibo;
@@ -53,6 +51,7 @@ private:
   /* texture handle for the internal sprite sheet */
   GLuint m_sheet;
 
+  /* desc */
   Uint32 m_count;
 
   /* internal texture size. */
@@ -60,6 +59,9 @@ private:
 
   /* keeps track of draw state. */
   bool m_begun;
+
+  /* desc */
+  StitcherTactic m_tactic;
 
   /* rectangle packer to fit patches inside the sheet */
   Packer m_packer;

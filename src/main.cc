@@ -59,7 +59,13 @@ int main(int argc, const char *argv[]) {
   std::shared_ptr<Texture> a = gAssetSystem->getAsset<Texture>("character");
   Sprite sprite("character", 0, 0, 292, 324);
 
-  Stitcher stitcher(512, 512);
+
+  GLint size;
+  glGetIntegerv(GL_MAX_TEXTURE_SIZE, &size);
+
+  std::cout << "Max size: " << size << std::endl;
+
+  Stitcher stitcher(16384, 16384);
 
   SDL_Event e;
   while (true) {

@@ -2,6 +2,7 @@
 #define __TYPES_H__
 
 #include <glm/glm.hpp>
+#include <SDL_types.h>
 
 typedef glm::vec2 Vec2;
 typedef glm::vec3 Vec3;

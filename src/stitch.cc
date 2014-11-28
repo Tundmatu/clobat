@@ -1,19 +1,6 @@
 #include "stitch.h"
 
-Packer::Packer(Uint32 width, Uint32 height) : m_width(width), m_height(height) {
-
-}
-
-Packer::~Packer() {
-
-}
-
-TexturePatch Packer::pack(std::string id, Uint32 width, Uint32 height) {
-  Uint32 x = rand() % (m_width - width);
-  Uint32 y = rand() % (m_height - height);
-
-  return TexturePatch(x, y, width, height);
-}
+#include <cmath>
 
 Stitcher::Stitcher(Uint32 width, Uint32 height) : m_width(width), m_height(height), m_packer(width, height), m_begun(false) {
   // allocate our texture on the GPU
@@ -24,6 +11,8 @@ Stitcher::Stitcher(Uint32 width, Uint32 height) : m_width(width), m_height(heigh
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+
+  SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Allocated %ix%i texture sheet (%i bytes) for stitcher", width, height, width * height);
 
   // create our buffers
   glGenBuffers(1, &m_vbo);
@@ -110,7 +99,9 @@ void Stitcher::stitch(const Sprite &sprite) {
   int tw = texture->data()->w;
   int th = texture->data()->h;
 
-  TexturePatch patch = m_packer.pack(sprite.getId(), tw, th);
+  Uint32 status;
+  Vec2 pos = m_packer.insert(sprite.getId(), tw, th);
+  TexturePatch patch(pos.x, pos.y, tw, th);
 
   m_usedPatches.insert(std::pair<std::string, TexturePatch>(sprite.getId(), patch));
 
