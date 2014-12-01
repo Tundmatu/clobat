@@ -12,7 +12,6 @@ Texture::Texture(std::string path, bool preload) : m_path(path), m_loaded(false)
 }
 
 Texture::~Texture() {
-  SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "TEX DED!!");
   SDL_FreeSurface(m_data);
 }
 

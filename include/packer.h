@@ -19,7 +19,7 @@ public:
   ~Packer();
 
   void resize(Uint32 width, Uint32 height);
-  Vec2 insert(std::string id, Uint32 width, Uint32 height);
+  Rect insert(std::string id, Uint32 width, Uint32 height);
 
   Uint32 getPackerWidth() { return m_width; }
   Uint32 getPackerHeight() { return m_height; }

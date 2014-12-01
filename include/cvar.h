@@ -14,13 +14,13 @@ enum CVarType {
 };
 
 enum CVarFlag {
-  CVAR_INT_T = BIT(0),
-  CVAR_FLOAT_T = BIT(1),
-  CVAR_BOOL_T = BIT(2),
+  CVAR_INT_T =    BIT(0),
+  CVAR_FLOAT_T =  BIT(1),
+  CVAR_BOOL_T =   BIT(2),
   CVAR_STRING_T = BIT(3),
-  CVAR_CONST = BIT(4),
-  CVAR_READ = BIT(5),
-  CVAR_WRITE = BIT(6),
+  CVAR_CONST =    BIT(4),
+  CVAR_READ =     BIT(5),
+  CVAR_WRITE =    BIT(6),
 };
 
 class CVar {

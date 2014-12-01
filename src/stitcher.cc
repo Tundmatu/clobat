@@ -1,22 +1,26 @@
-#include "stitch.h"
+#include "stitcher.h"
 
-#include <cmath>
+#include <chrono>
 
 Stitcher::Stitcher(Uint32 width, Uint32 height) : m_width(width), m_height(height), m_packer(width, height), m_begun(false) {
   // allocate our texture on the GPU
+  auto start = std::chrono::system_clock::now();
   glGenTextures(1, &m_sheet);
   glBindTexture(GL_TEXTURE_2D, m_sheet);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start);
 
-  SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Allocated %ix%i texture sheet (%i bytes) for stitcher", width, height, width * height);
+  SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Allocated %ix%i texture sheet (%i bytes) for stitcher in %llu ms", width, height, width * height, duration.count());
 
   // create our buffers
   glGenBuffers(1, &m_vbo);
   glGenBuffers(1, &m_ibo);
+
+  // create our pbo
   glGenBuffers(1, &m_pbo);
 }
 
@@ -99,13 +103,21 @@ void Stitcher::stitch(const Sprite &sprite) {
   int tw = texture->data()->w;
   int th = texture->data()->h;
 
-  Uint32 status;
-  Vec2 pos = m_packer.insert(sprite.getId(), tw, th);
-  TexturePatch patch(pos.x, pos.y, tw, th);
+  auto start = std::chrono::system_clock::now();
+  Rect rect = m_packer.insert(sprite.getId(), tw, th);
+  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start);
+  SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Packed %ix%i texture in %llu ms", tw, th, duration.count());
 
-  m_usedPatches.insert(std::pair<std::string, TexturePatch>(sprite.getId(), patch));
+  if (rect.m_height > 0) {
+    TexturePatch patch(rect.m_x, rect.m_y, tw, th);
 
-  upload(patch, texture->data()->pixels);
+    m_usedPatches.insert(std::pair<std::string, TexturePatch>(sprite.getId(), patch));
+
+    start = std::chrono::system_clock::now();
+    upload(patch, texture->data()->pixels);
+    duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start);
+    SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Uploaded %ix%i texture in %llu ms", tw, th, duration.count());
+  }
 
   // todo: remove
   begin();
@@ -114,11 +126,17 @@ void Stitcher::stitch(const Sprite &sprite) {
 void Stitcher::upload(const TexturePatch &patch, void *data) {
   Uint32 size = patch.m_w * patch.m_h * 4;
 
+  glBindBuffer(GL_PIXEL_UNPACK_BUFFER, m_pbo);
+
+  // we can probably get away with resizing the pbo but we can orphan it just
+  // in case!
+  glBufferData(GL_PIXEL_UNPACK_BUFFER, size, NULL, GL_STREAM_DRAW);
+  glBufferData(GL_PIXEL_UNPACK_BUFFER, size, data, GL_STREAM_DRAW);
+
   glBindTexture(GL_TEXTURE_2D, m_sheet);
-  //glBindBuffer(GL_PIXEL_UNPACK_BUFFER, m_pbo);
-  //glBufferData(GL_PIXEL_UNPACK_BUFFER, size, NULL, GL_STREAM_DRAW);
-  glTexSubImage2D(GL_TEXTURE_2D, 0, patch.m_x, patch.m_y, patch.m_w, patch.m_h, GL_RGBA, GL_UNSIGNED_BYTE, data);
-  //glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+  glTexSubImage2D(GL_TEXTURE_2D, 0, patch.m_x, patch.m_y, patch.m_w, patch.m_h, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+
+  glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
   SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Uploaded %ix%i texture (%i bytes) into internal sheet at x: %i, y: %i", patch.m_w, patch.m_h, size, patch.m_x, patch.m_y);
 }

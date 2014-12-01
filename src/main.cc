@@ -3,7 +3,7 @@
 
 #include <tiny_obj_loader.h>
 #include <iostream>
-#include <stitch.h>
+#include "stitcher.h"
 
 #include "globals.h"
 #include "texture.h"
@@ -65,7 +65,7 @@ int main(int argc, const char *argv[]) {
 
   std::cout << "Max size: " << size << std::endl;
 
-  Stitcher stitcher(16384, 16384);
+  Stitcher stitcher(8192, 8192);
 
   SDL_Event e;
   while (true) {

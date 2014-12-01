@@ -19,11 +19,11 @@ void Packer::resize(Uint32 width, Uint32 height) {
   m_freeRects.push_back(node);
 }
 
-Vec2 Packer::insert(std::string id, Uint32 width, Uint32 height) {
+Rect Packer::insert(std::string id, Uint32 width, Uint32 height) {
   Uint32 first, second;
   Rect node = find(width, height, first, second);
 
-  if (node.m_height == 0) return Vec2(node.m_x, node.m_y);
+  if (node.m_height == 0) return node;
 
   /*
   auto it = m_freeRects.begin();
@@ -45,18 +45,18 @@ Vec2 Packer::insert(std::string id, Uint32 width, Uint32 height) {
   m_usedRects.push_back(node);
   m_used += node.m_width * node.m_height;
 
-  return Vec2(node.m_x, node.m_y);
+  return node;
 }
 
 Rect Packer::score(Uint32 width, Uint32 height, Uint32 &first, Uint32 &second) const {
-  first = std::numeric_limits<int>::max();
-  second = std::numeric_limits<int>::max();
+  first = std::numeric_limits<Uint32>::max();
+  second = std::numeric_limits<Uint32>::max();
 
   Rect node = find(width, height, first, second);
 
   if (node.m_height == 0) {
-    first = std::numeric_limits<int>::max();
-    second = std::numeric_limits<int>::max();
+    first = std::numeric_limits<Uint32>::max();
+    second = std::numeric_limits<Uint32>::max();
   }
 
   return node;
@@ -65,7 +65,7 @@ Rect Packer::score(Uint32 width, Uint32 height, Uint32 &first, Uint32 &second) c
 Rect Packer::find(Uint32 width, Uint32 height, Uint32 &first, Uint32 &second) const {
   Rect node(0, 0, 0, 0);
 
-  first = std::numeric_limits<int>::max();
+  first = std::numeric_limits<Uint32>::max();
 
   for (size_t i = 0; i < m_freeRects.size(); ++i) {
     Rect r = m_freeRects[i];
