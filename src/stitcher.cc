@@ -1,10 +1,7 @@
 #include "stitcher.h"
 
-#include <chrono>
-
 Stitcher::Stitcher(Uint32 width, Uint32 height) : m_width(width), m_height(height), m_packer(width, height), m_begun(false) {
   // allocate our texture on the GPU
-  auto start = std::chrono::system_clock::now();
   glGenTextures(1, &m_sheet);
   glBindTexture(GL_TEXTURE_2D, m_sheet);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -12,9 +9,8 @@ Stitcher::Stitcher(Uint32 width, Uint32 height) : m_width(width), m_height(heigh
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start);
 
-  SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Allocated %ix%i texture sheet (%i bytes) for stitcher in %llu ms", width, height, width * height, duration.count());
+  SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Allocated %ix%i texture sheet (%.2f MB) for stitcher", width, height, MB(width * height * 4));
 
   // create our buffers
   glGenBuffers(1, &m_vbo);
@@ -46,8 +42,9 @@ void Stitcher::begin() {
 }
 
 void Stitcher::draw(const Sprite &sprite, float x, float y) {
-  if (m_usedPatches.count(sprite.getId()) == 0)
+  if (m_usedPatches.count(sprite.getId()) == 0) {
     stitch(sprite);
+  }
 
   TexturePatch data = m_usedPatches.at(sprite.getId());
 
@@ -103,20 +100,19 @@ void Stitcher::stitch(const Sprite &sprite) {
   int tw = texture->data()->w;
   int th = texture->data()->h;
 
-  auto start = std::chrono::system_clock::now();
   Rect rect = m_packer.insert(sprite.getId(), tw, th);
-  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start);
-  SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Packed %ix%i texture in %llu ms", tw, th, duration.count());
+  TexturePatch patch(rect.m_x, rect.m_y, tw, th);
 
   if (rect.m_height > 0) {
-    TexturePatch patch(rect.m_x, rect.m_y, tw, th);
+    SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Packed %ix%i texture (%.2f kB) into internal bin at [%i, %i]", tw, th, kB(tw * th * 4), patch.m_x, patch.m_y);
 
     m_usedPatches.insert(std::pair<std::string, TexturePatch>(sprite.getId(), patch));
 
-    start = std::chrono::system_clock::now();
     upload(patch, texture->data()->pixels);
-    duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start);
-    SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Uploaded %ix%i texture in %llu ms", tw, th, duration.count());
+  } else {
+    m_overflowPatches.push_back(patch);
+
+    // todo: handle textures that don't fit
   }
 
   // todo: remove
@@ -124,27 +120,40 @@ void Stitcher::stitch(const Sprite &sprite) {
 }
 
 void Stitcher::upload(const TexturePatch &patch, void *data) {
+  // textures are converted to 4 components at load-time, so no need to do any
+  // specific calculations.
   Uint32 size = patch.m_w * patch.m_h * 4;
 
+  // bind our pixel buffer object to be used for DMA directly to the gpu
   glBindBuffer(GL_PIXEL_UNPACK_BUFFER, m_pbo);
 
-  // we can probably get away with resizing the pbo but we can orphan it just
-  // in case!
+  // upload the texture data to the pixel buffer object. we can probably get
+  // away with resizing the pbo but we can orphan it just in case!
   glBufferData(GL_PIXEL_UNPACK_BUFFER, size, NULL, GL_STREAM_DRAW);
   glBufferData(GL_PIXEL_UNPACK_BUFFER, size, data, GL_STREAM_DRAW);
 
+  // bind our sheet texture for usage
   glBindTexture(GL_TEXTURE_2D, m_sheet);
+
+  // upload our texture from the pixel buffer object to our sheet in the patch
+  // provided in the args
   glTexSubImage2D(GL_TEXTURE_2D, 0, patch.m_x, patch.m_y, patch.m_w, patch.m_h, GL_RGBA, GL_UNSIGNED_BYTE, 0);
 
+  // unbind the pixel buffer object. if left on, this can have undesired and
+  // even undefined behavior with other pixel transfer operations
   glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
-  SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Uploaded %ix%i texture (%i bytes) into internal sheet at x: %i, y: %i", patch.m_w, patch.m_h, size, patch.m_x, patch.m_y);
+  SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Uploaded %ix%i texture (%.2f kB) (%.2f MB out of %.2f MB used)", patch.m_w, patch.m_h, kB(size), MB(m_packer.getAreaOccupied() * 4), MB(m_packer.getArea() * 4));
 }
 
-void Stitcher::prune() {
+void Stitcher::setTactic(StitcherTactic tactic) {
+  m_tactic = tactic;
+}
+
+void Stitcher::invalidate() {
 
 }
 
-void Stitcher::sort() {
+void Stitcher::resize() {
 
 }

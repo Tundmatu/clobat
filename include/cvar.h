@@ -1,5 +1,4 @@
-#ifndef __CVAR_H__
-#define __CVAR_H__
+#pragma once
 
 #include <unordered_map>
 #include <cassert>
@@ -103,5 +102,3 @@ private:
   CVarMap m_cvars;
 
 };
-
-#endif /* __CVAR_H__ */

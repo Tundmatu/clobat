@@ -1,5 +1,4 @@
-#ifndef __PACKER_H__
-#define __PACKER_H__
+#pragma once
 
 #include "types.h"
 
@@ -54,5 +53,3 @@ struct Rect {
         && a.m_y + a.m_height <= b.m_y + b.m_height;
   }
 };
-
-#endif /* __PACKER_H__ */

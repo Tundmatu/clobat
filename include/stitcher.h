@@ -1,5 +1,4 @@
-#ifndef __STITCH_H__
-#define __STITCH_H__
+#pragma once
 
 #include <SDL2/SDL_opengl.h>
 
@@ -20,8 +19,10 @@ struct TexturePatch {
 };
 
 enum StitcherTactic {
-  ExpandSize,
-  Prune
+  /* desc */
+  Expand,
+  /* desc */
+  Invalidate
 };
 
 class Stitcher {
@@ -33,14 +34,14 @@ public:
   void draw(const Sprite &sprite, float x, float y);
   void end();
 
-  void setTactic(StitcherTactic tactic) { m_tactic = tactic; }
+  void setTactic(StitcherTactic tactic);
 private:
   void stitch(const Sprite &sprite);
   void upload(const TexturePatch &patch, void *data);
 
-  void prune();
+  void invalidate();
 
-  void sort();
+  void resize();
 
   /* vertex buffer handle, index buffer handle. */
   GLuint m_vbo, m_ibo;
@@ -76,5 +77,3 @@ private:
      texture. scheduled for insertion. */
   std::vector<TexturePatch> m_overflowPatches;
 };
-
-#endif /* __STITCH_H__ */

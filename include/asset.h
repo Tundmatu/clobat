@@ -1,5 +1,4 @@
-#ifndef __ASSET_H__
-#define __ASSET_H__
+#pragma once
 
 #include <SDL2/SDL.h>
 
@@ -75,7 +74,6 @@ public:
 
   template<typename T>
   std::shared_ptr<T> getAsset(std::string id, std::shared_ptr<T> fallback = nullptr) {
-    std::cout << m_assetMap.count(id) << std::endl;
     if (m_assetMap.count(id) > 0) {
       std::shared_ptr<T> asset = std::static_pointer_cast<T>(m_assetMap.at(id).lock());
       if (asset) return asset;
@@ -106,5 +104,3 @@ private:
   AssetMap m_assetMap;
   AssetDescriptorMap m_descriptorMap;
 };
-
-#endif /* __ASSET_H__ */

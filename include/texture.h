@@ -1,5 +1,4 @@
-#ifndef __TEXTURE_H__
-#define __TEXTURE_H__
+#pragma once
 
 #include <SDL2/SDL.h>
 
@@ -27,5 +26,3 @@ private:
   bool m_loaded;
 
 };
-
-#endif /* __TEXTURE_H__ */

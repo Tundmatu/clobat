@@ -1,5 +1,4 @@
-#ifndef __SPRITE_H__
-#define __SPRITE_H__
+#pragma once
 
 #include <string>
 
@@ -26,5 +25,3 @@ public:
   int m_clipX, m_clipY, m_clipW, m_clipH;
   std::string m_id;
 };
-
-#endif /* __SPRITE_H__ */
